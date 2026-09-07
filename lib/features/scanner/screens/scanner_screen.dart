@@ -161,63 +161,95 @@ class ScannerView extends StatelessWidget {
 
   Widget _buildLoadingView(String message) {
     return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha:0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 6,
-                    color: Color(0xFF2E7D32),
-                    backgroundColor: Color(0xFFE8F5E9),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 84,
+                    height: 84,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 5,
+                      color: Color(0xFF2E7D32),
+                      backgroundColor: Color(0xFFE8F5E9),
+                    ),
+                  ),
+                  Icon(
+                    Icons.document_scanner_rounded,
+                    size: 36,
+                    color: AppColors.primaryGreen,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Text(
+                  message,
+                  key: ValueKey<String>(message),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF1B5E20),
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                Icon(
-                  Icons.document_scanner_outlined,
-                  size: 32,
-                  color: AppColors.primaryGreen,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F8E9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFC8E6C9),
+                    width: 1,
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            Text(
-              message.replaceAll('AI', '').trim(), // Ensure no AI in runtime messages
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF2E7D32),
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: Color(0xFF2E7D32),
+                    ),
+                    SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Pemeriksaan pertama mungkin perlu waktu tambahan saat server AI inisialisasi.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF2E7D32),
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Harap tunggu sebentar...',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

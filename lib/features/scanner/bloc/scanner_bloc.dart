@@ -53,9 +53,16 @@ class ScannerBloc extends Bloc<ScannerEvent, ScannerState> {
     if (imagePath == null) return;
 
     try {
-      emit(const ScannerLoading(message: 'Menganalisis gambar dengan Gemini AI Vision...'));
+      emit(const ScannerLoading(message: 'Menghubungkan ke server AI...'));
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (!emit.isDone) {
+        emit(const ScannerLoading(message: 'Menganalisis gambar daun tanaman...'));
+      }
 
       final geminiResult = await _scannerService.analyzeWithGeminiVision(File(imagePath));
+      if (!emit.isDone) {
+        emit(const ScannerLoading(message: 'Menyiapkan hasil diagnosa...'));
+      }
       final isPlant = geminiResult['is_plant'] == true;
 
       if (!isPlant) {
@@ -159,12 +166,15 @@ class ScannerBloc extends Bloc<ScannerEvent, ScannerState> {
     required String imagePath,
     required String plantType,
   }) async {
-    emit(const ScannerLoading(message: 'Menganalisis penyakit... (mungkin perlu beberapa saat)'));
+    emit(const ScannerLoading(message: 'Menghubungkan ke model penyakit... (cold-start server)'));
 
     try {
       // 1. Upload gambar ke Supabase Storage.
       String cloudImageUrl = '';
       try {
+        if (!emit.isDone) {
+          emit(const ScannerLoading(message: 'Mengunggah gambar untuk analisis...'));
+        }
         cloudImageUrl = await _pestService.uploadImage(imagePath);
         debugPrint('PestScanner: Image uploaded to $cloudImageUrl');
       } catch (e) {
@@ -175,8 +185,15 @@ class ScannerBloc extends Bloc<ScannerEvent, ScannerState> {
       }
 
       // 2. Jalankan model penyakit sesuai jenis tanaman (HuggingFace)
+      if (!emit.isDone) {
+        emit(ScannerLoading(message: 'Menganalisis penyakit tanaman $plantType...'));
+      }
       final Map<String, dynamic> result =
           await _runDiseaseModel(plantType, imagePath, cloudImageUrl);
+
+      if (!emit.isDone) {
+        emit(const ScannerLoading(message: 'Mencari rekomendasi penanganan...'));
+      }
 
       final rawLabel = (result['label'] ?? 'Tidak Terdeteksi').toString();
       final confidence = (result['confidence'] ?? 0.0).toDouble();

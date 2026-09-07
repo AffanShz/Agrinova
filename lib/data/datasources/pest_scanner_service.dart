@@ -14,7 +14,9 @@ import 'package:agrinova/core/constants/env_config.dart';
 /// Seluruh output dinormalisasi ke {label, confidence} dengan confidence 0..1.
 class PestScannerService {
   // HuggingFace Spaces need up to 90s to wake from sleep (cold start)
-  static const Duration _timeout = Duration(seconds: 120);
+  static const Duration _hfTimeout = Duration(seconds: 90);
+  // Gemini Vision fast failover timeout (45s per model attempt)
+  static const Duration _geminiTimeout = Duration(seconds: 45);
 
   // ─── Deteksi jenis tanaman (MODEL_PLANT) ──────────────────────────────────
   /// Mengembalikan {plant: 'Tomat'|'Padi'|'Teh', confidence: 0..1, accepted: bool}
@@ -49,7 +51,7 @@ class PestScannerService {
             },
             body: jsonEncode({'image_url': imageUrl}),
           )
-          .timeout(_timeout);
+          .timeout(_hfTimeout);
 
       if (kDebugMode) {
         debugPrint(
@@ -122,7 +124,7 @@ class PestScannerService {
       final request = http.MultipartRequest('POST', url)
         ..files.add(await http.MultipartFile.fromPath('file', image.path));
 
-      final streamed = await request.send().timeout(_timeout);
+      final streamed = await request.send().timeout(_hfTimeout);
       final response =
           await http.Response.fromStream(streamed).timeout(const Duration(seconds: 30));
 
@@ -228,7 +230,7 @@ BERIKAN KELUARAN HANYA DALAM FORMAT JSON BERSIH (Strict JSON format tanpa markdo
               },
               body: bodyPayload,
             )
-            .timeout(_timeout);
+            .timeout(_geminiTimeout);
 
         if (response.statusCode == 200) {
           final resData = jsonDecode(response.body) as Map<String, dynamic>;
