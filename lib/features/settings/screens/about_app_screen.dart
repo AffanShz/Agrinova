@@ -71,8 +71,7 @@ class AboutAppScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 48),
-            _buildInfoTile(
-                'about.developer'.tr(), 'Capstone Project Kelompok 4'),
+            _buildInfoTile('about.developer'.tr(), 'AffanShz'),
             _buildDivider(),
             _buildInfoTile(
                 'about.contact'.tr(), '111202415784@mhs.dinus.ac.id'),
