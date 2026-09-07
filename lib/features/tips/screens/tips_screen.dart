@@ -231,6 +231,7 @@ class _TipsScreenState extends State<TipsScreen> {
                           imageUrl: imageUrl,
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          alignment: Alignment.center,
                           placeholder: (context, url) => const Center(
                             child: SizedBox(
                               width: 24,
