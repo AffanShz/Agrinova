@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:agrinova/data/datasources/planting_schedule_service.dart';
 
 /// Repository untuk mengelola Jadwal Tanam
-/// Data disimpan secara lokal menggunakan Hive
+/// Mendukung arsitektur Offline-First (Hive) dan Cloud Sync (Supabase)
 class CalendarRepository {
   final PlantingScheduleService _scheduleService;
 
@@ -10,7 +10,7 @@ class CalendarRepository {
     required PlantingScheduleService scheduleService,
   }) : _scheduleService = scheduleService;
 
-  /// Fetch semua jadwal tanam
+  /// Fetch semua jadwal tanam (cloud merge dengan offline fallback)
   Future<List<Map<String, dynamic>>> fetchSchedules() async {
     try {
       final schedules = await _scheduleService.fetchSchedules();
@@ -23,7 +23,6 @@ class CalendarRepository {
   }
 
   /// Tambah jadwal baru
-  /// Returns ID dari jadwal yang baru dibuat
   Future<int> addSchedule({
     required String namaTanaman,
     required DateTime tanggalTanam,
@@ -73,5 +72,10 @@ class CalendarRepository {
       debugPrint('CalendarRepository: Error deleting schedule - $e');
       rethrow;
     }
+  }
+
+  /// Sinkronkan jadwal offline yang tertunda
+  Future<int> syncPendingSchedules() async {
+    return await _scheduleService.syncPendingSchedules();
   }
 }
