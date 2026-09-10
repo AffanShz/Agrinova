@@ -24,6 +24,7 @@ import 'package:agrinova/data/datasources/planting_schedule_service.dart';
 import 'package:agrinova/data/datasources/chatbot_service.dart';
 import 'package:agrinova/data/repositories/chatbot_repository.dart';
 import 'package:agrinova/core/constants/env_config.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 // Repositories
 import 'package:agrinova/data/repositories/auth_repository.dart';
@@ -48,6 +49,7 @@ bool appStartedOffline = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppLogger.initCrashReporting();
   await EasyLocalization.ensureInitialized();
 
   assert(EnvConfig.validateHttpsUrls(), 'Security Warning: All base URLs must use HTTPS scheme');
