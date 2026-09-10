@@ -512,7 +512,6 @@ class CacheService {
     };
   }
 
-  /// Update status langganan untuk akun user yang aktif & broadcast ke seluruh listener UI
   Future<void> setSubscription({
     required bool isActive,
     String? planName,
@@ -541,28 +540,47 @@ class CacheService {
       _subscriptionExpiryTimer = null;
     }
 
-    // Update metadata di Supabase jika sedang login
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        await Supabase.instance.client.auth.updateUser(
-          UserAttributes(
-            data: {
-              'is_premium': isActive,
-              'premium_plan': planName ?? 'Gratis',
-              'premium_expiry': expiryDate?.toIso8601String(),
-            },
-          ),
-        );
-      }
-    } catch (_) {}
-
     _subscriptionUpdateController.add(getSubscriptionDetails());
   }
 
-  /// Tambah counter pemakaian chat gratis.
-  ///
-  /// Chat pertama di hari baru otomatis memulai periode baru dari nol.
+  Future<void> syncSubscriptionFromServer() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('subscriptions')
+          .select()
+          .eq('user_id', user.id)
+          .order('created_at', ascending: false)
+          .limit(1);
+
+      if (response.isNotEmpty) {
+        final sub = Map<String, dynamic>.from(response.first as Map);
+        final status = sub['status'] as String?;
+        final expiresAt = DateTime.tryParse(
+            (sub['expires_at'] ?? '').toString());
+        final planName = sub['plan_name'] as String?;
+
+        final isActive = status == 'active' &&
+            expiresAt != null &&
+            expiresAt.isAfter(DateTime.now());
+
+        if (isActive) {
+          await setSubscription(
+            isActive: true,
+            planName: planName,
+            expiryDate: expiresAt,
+          );
+        } else if (status == 'cancelled' || status == 'expired') {
+          await setSubscription(isActive: false);
+        }
+      }
+    } catch (e) {
+      debugPrint('[CacheService] syncSubscriptionFromServer error: $e');
+    }
+  }
+
   Future<int> incrementFreeChatCount() async {
     final countKey = _getUserSubKey('freeChatCount');
     final periodKey = _getUserSubKey('freeChatPeriod');
@@ -571,22 +589,36 @@ class CacheService {
     await _settingsBox.put(countKey, next);
     await _settingsBox.put(periodKey, _currentQuotaPeriod());
 
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        await Supabase.instance.client
+            .rpc('increment_daily_chat_quota', params: {'p_daily_limit': 3});
+      }
+    } catch (e) {
+      debugPrint('[CacheService] sync increment_daily_chat_quota error: $e');
+    }
+
     _subscriptionUpdateController.add(getSubscriptionDetails());
     return next;
   }
 
-  /// Kembalikan satu kuota yang terlanjur terpotong.
-  ///
-  /// Dipakai saat permintaan ke AI gagal tanpa menghasilkan jawaban sama
-  /// sekali, supaya user tidak kehilangan kuota untuk sesuatu yang tidak
-  /// pernah ia terima. Tidak berlaku lintas hari: kalau periodenya sudah
-  /// berganti, counter-nya memang sudah nol.
   Future<void> refundFreeChatCount() async {
     final countKey = _getUserSubKey('freeChatCount');
     final current = _effectiveFreeChatCount();
     if (current <= 0) return;
 
     await _settingsBox.put(countKey, current - 1);
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        await Supabase.instance.client.rpc('refund_daily_chat_quota');
+      }
+    } catch (e) {
+      debugPrint('[CacheService] sync refund_daily_chat_quota error: $e');
+    }
+
     _subscriptionUpdateController.add(getSubscriptionDetails());
   }
 

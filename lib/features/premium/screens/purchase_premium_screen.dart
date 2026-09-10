@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:agrinova/core/constants/colors.dart';
 import 'package:agrinova/core/services/cache_service.dart';
 import 'package:agrinova/core/services/midtrans_service.dart';
@@ -258,20 +257,10 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
         return;
       }
 
-      final user = Supabase.instance.client.auth.currentUser;
-      final userProfile = _cacheService.getUserProfile();
-      final customerName =
-          (userProfile['name'] != null && userProfile['name']!.isNotEmpty)
-              ? userProfile['name']!
-              : (user?.userMetadata?['full_name'] as String? ?? 'AgriNova');
-      final customerEmail = user?.email ?? 'support@agrinova.id';
-
       final result = await _midtransService.createTransaction(
         planName: planTitle,
         amount: amount,
         paymentMethod: _selectedPaymentMethod,
-        customerName: customerName,
-        customerEmail: customerEmail,
       );
 
       if (!mounted) return;
@@ -516,33 +505,33 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                           ? null
                           : () async {
                               setSheetState(() => isChecking = true);
-                              final status = await _midtransService
-                                  .checkTransactionStatus(orderId);
+                              // Sinkronkan status dari server Supabase
+                              // (hasil webhook Midtrans resmi)
+                              await _cacheService.syncSubscriptionFromServer();
                               setSheetState(() => isChecking = false);
 
-                              if (status == PaymentStatus.success) {
+                              final updatedDetails =
+                                  _cacheService.getSubscriptionDetails();
+                              final isActive =
+                                  updatedDetails['isActive'] == true;
+
+                              if (isActive) {
                                 if (sheetContext.mounted) {
                                   Navigator.pop(sheetContext);
                                 }
-                                final expiryDate = await _activatePlan(plan);
+                                final expiryDate = updatedDetails['expiryDate']
+                                        as DateTime? ??
+                                    DateTime.now()
+                                        .add(const Duration(days: 30));
                                 if (!mounted) return;
                                 _showSuccessDialog(expiryDate);
-                              } else if (status == PaymentStatus.pending) {
-                                if (outerContext.mounted) {
-                                  AppToast.show(
-                                    outerContext,
-                                    message:
-                                        'Pembayaran belum terdeteksi. Silakan selesaikan pembayaran terlebih dahulu di browser atau simulator.',
-                                    type: ToastType.warning,
-                                  );
-                                }
                               } else {
                                 if (outerContext.mounted) {
                                   AppToast.show(
                                     outerContext,
                                     message:
-                                        'Status transaksi: $status (Belum berhasil)',
-                                    type: ToastType.info,
+                                        'Pembayaran sedang diverifikasi server. Harap selesaikan tagihan lalu cek kembali.',
+                                    type: ToastType.warning,
                                   );
                                 }
                               }
