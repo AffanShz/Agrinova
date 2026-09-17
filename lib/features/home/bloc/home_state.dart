@@ -33,6 +33,9 @@ class HomeLoaded extends HomeState {
   /// Lokasi detail (alamat lengkap)
   final String? detailedLocation;
 
+  /// Lokasi singkat (kecamatan, kab/kota, provinsi)
+  final String? shortLocation;
+
   /// Waktu terakhir data disinkronkan
   final DateTime? lastSyncTime;
 
@@ -42,13 +45,18 @@ class HomeLoaded extends HomeState {
   /// Pesan alert/rekomendasi tanaman berdasarkan cuaca
   final String? alertMessage;
 
+  /// Apakah lokasi menggunakan GPS real-time
+  final bool isRealTimeGps;
+
   const HomeLoaded({
     required this.currentWeather,
     required this.forecastList,
     this.detailedLocation,
+    this.shortLocation,
     this.lastSyncTime,
     this.isOnline = true,
     this.alertMessage,
+    this.isRealTimeGps = false,
   });
 
   @override
@@ -56,9 +64,11 @@ class HomeLoaded extends HomeState {
         currentWeather,
         forecastList,
         detailedLocation,
+        shortLocation,
         lastSyncTime,
         isOnline,
         alertMessage,
+        isRealTimeGps,
       ];
 
   /// Copy with method untuk update partial state
@@ -66,17 +76,21 @@ class HomeLoaded extends HomeState {
     Map<String, dynamic>? currentWeather,
     List<dynamic>? forecastList,
     String? detailedLocation,
+    String? shortLocation,
     DateTime? lastSyncTime,
     bool? isOnline,
     String? alertMessage,
+    bool? isRealTimeGps,
   }) {
     return HomeLoaded(
       currentWeather: currentWeather ?? this.currentWeather,
       forecastList: forecastList ?? this.forecastList,
       detailedLocation: detailedLocation ?? this.detailedLocation,
+      shortLocation: shortLocation ?? this.shortLocation,
       lastSyncTime: lastSyncTime ?? this.lastSyncTime,
       isOnline: isOnline ?? this.isOnline,
       alertMessage: alertMessage ?? this.alertMessage,
+      isRealTimeGps: isRealTimeGps ?? this.isRealTimeGps,
     );
   }
 }

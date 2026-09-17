@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
 import 'package:agrinova/utils/weather_utils.dart';
 
-/// Widget untuk menampilkan kartu cuaca utama dengan gradient dinamis
-class MainWeatherCard extends StatelessWidget {
+class HomeWeatherCard extends StatelessWidget {
   final Map<String, dynamic> currentWeather;
-  final String? detailedLocation;
+  final String? shortLocation;
   final bool isRealTimeGps;
   final VoidCallback? onRefresh;
 
-  const MainWeatherCard({
+  const HomeWeatherCard({
     super.key,
     required this.currentWeather,
-    this.detailedLocation,
+    this.shortLocation,
     this.isRealTimeGps = true,
     this.onRefresh,
   });
@@ -29,137 +27,122 @@ class MainWeatherCard extends StatelessWidget {
     if (main == null || weather == null) return const SizedBox();
     final weatherMain = weather['main'] as String?;
     final gradientColors = _getWeatherGradient(weatherMain);
-    final now = DateTime.now();
+    final temp = (main['temp'] as num?)?.toStringAsFixed(0) ?? '--';
+    final humidity = main['humidity'];
+    final windSpeed = currentWeather['wind']?['speed'];
 
-    String locationText = detailedLocation?.isNotEmpty == true
-        ? detailedLocation!
+    String locationText = shortLocation?.isNotEmpty == true
+        ? shortLocation!
         : currentWeather['name'] ?? '-';
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: gradientColors[0].withValues(alpha: 0.4),
-            blurRadius: 15,
-            offset: const Offset(0, 10),
+            color: gradientColors[0].withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Location
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 isRealTimeGps ? Icons.location_on : Icons.location_off,
                 color: isRealTimeGps ? Colors.white70 : Colors.amber.shade200,
-                size: 18
+                size: 14,
               ),
               const SizedBox(width: 4),
-              Flexible(
+              Expanded(
                 child: Text(
                   locationText,
                   style: TextStyle(
                     color: isRealTimeGps ? Colors.white : Colors.amber.shade100,
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (onRefresh != null) ...[
-                const SizedBox(width: 8),
+              if (onRefresh != null)
                 GestureDetector(
                   onTap: onRefresh,
-                  child: const Icon(Icons.refresh, color: Colors.white, size: 20),
+                  child: const Icon(Icons.refresh, color: Colors.white70, size: 18),
                 ),
-              ],
             ],
           ),
-          const SizedBox(height: 8),
-          // Date
-          Text(
-            DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(now),
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          // Weather Icon & Temperature Row
+          const SizedBox(height: 10),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               weather['icon'] != null
                   ? CachedNetworkImage(
                       imageUrl:
-                          'https://openweathermap.org/img/wn/${weather['icon']}@4x.png',
-                      width: 80,
-                      height: 80,
+                          'https://openweathermap.org/img/wn/${weather['icon']}@2x.png',
+                      width: 56,
+                      height: 56,
                       placeholder: (context, url) => Icon(
                         _getWeatherIcon(weatherMain),
-                        size: 60,
+                        size: 40,
                         color: Colors.white70,
                       ),
                       errorWidget: (context, url, error) => Icon(
                         _getWeatherIcon(weatherMain),
-                        size: 60,
+                        size: 40,
                         color: Colors.white,
                       ),
                     )
                   : Icon(
                       _getWeatherIcon(weatherMain),
-                      size: 60,
+                      size: 40,
                       color: Colors.white,
                     ),
-              const SizedBox(width: 16),
-              Text(
-                '${main['temp'].toStringAsFixed(0)}°C',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  height: 1.0,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$temp°C',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      WeatherUtils.translateWeather(weather['description'] ?? ''),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          // Description
-          Text(
-            WeatherUtils.translateWeather(weather['description']),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Info Items
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              WeatherInfoItem(
-                icon: Icons.water_drop,
-                value: '${main['humidity']}%',
-                label: 'Kelembaban',
-              ),
-              WeatherInfoItem(
-                icon: Icons.air,
-                value: '${currentWeather['wind']['speed']} m/s',
-                label: 'Angin',
-              ),
-              WeatherInfoItem(
-                icon: Icons.thermostat,
-                value: '${main['feels_like'].toStringAsFixed(0)}°',
-                label: 'Terasa',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (humidity != null)
+                    _InfoChip(icon: Icons.water_drop, text: '$humidity%'),
+                  const SizedBox(height: 4),
+                  if (windSpeed != null)
+                    _InfoChip(icon: Icons.air, text: '$windSpeed m/s'),
+                ],
               ),
             ],
           ),
@@ -213,36 +196,26 @@ class MainWeatherCard extends StatelessWidget {
   }
 }
 
-/// Widget kecil untuk menampilkan info cuaca (humidity, wind, feels like)
-class WeatherInfoItem extends StatelessWidget {
+class _InfoChip extends StatelessWidget {
   final IconData icon;
-  final String value;
-  final String label;
+  final String text;
 
-  const WeatherInfoItem({
-    super.key,
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
+  const _InfoChip({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white70, size: 24),
-        const SizedBox(height: 4),
+        Icon(icon, color: Colors.white60, size: 14),
+        const SizedBox(width: 4),
         Text(
-          value,
+          text,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
       ],
     );

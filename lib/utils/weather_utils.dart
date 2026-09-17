@@ -20,25 +20,41 @@ class WeatherUtils {
       return 'Potensi badai petir. Tunda pemupukan karena berisiko hanyut dan hindari area terbuka.';
     }
 
-    if (conditionId >= 300 && conditionId < 400) {
-      return 'Gerimis turun. Cek kelembapan tanah, mungkin tidak perlu disiram sore ini.';
-    }
-
     if (conditionId >= 500 && conditionId < 600) {
       if (conditionId >= 502) {
         return 'Hujan deras terdeteksi! Segera buka saluran drainase agar lahan tidak tergenang.';
       }
-      return 'Hujan turun. Hentikan penyiraman dan pemupukan sementara agar efisien.';
     }
 
-    if (conditionId == 800) {
-      return 'Cuaca cerah terik. Pastikan tanaman mendapat air yang cukup (siram pagi/sore).';
+    if (conditionId >= 600 && conditionId < 700) {
+      return 'Suhu sangat rendah terdeteksi. Lindungi tanaman dari kondisi beku.';
     }
 
-    if (conditionId > 800) {
-      return 'Cuaca berawan. Waktu yang tepat untuk pemupukan atau penyemprotan hama.';
+    if (conditionId >= 700 && conditionId < 800) {
+      if (conditionId == 781) {
+        return 'Peringatan tornado! Segera cari tempat berlindung dan amankan peralatan.';
+      }
+      if (conditionId == 762) {
+        return 'Peringatan abu vulkanik! Tutup tanaman dan hindari aktivitas luar ruangan.';
+      }
     }
 
-    return null; 
+    final temp = _lastKnownTemp;
+    if (temp != null) {
+      if (temp >= 40) {
+        return 'Suhu sangat tinggi ($temp°C)! Pastikan irigasi cukup dan beri peneduh pada tanaman muda.';
+      }
+      if (temp <= 5) {
+        return 'Suhu sangat rendah ($temp°C)! Lindungi tanaman dari potensi embun beku.';
+      }
+    }
+
+    return null;
+  }
+
+  static int? _lastKnownTemp;
+
+  static void updateTemperature(int temp) {
+    _lastKnownTemp = temp;
   }
 }

@@ -5,23 +5,17 @@ import 'package:agrinova/core/constants/env_config.dart';
 class WeatherService {
   String get apiKey => EnvConfig.openWeatherApiKey;
 
-  final double lat = -6.5716;
-  final double lon = 107.7587;
-
   // Timeout duration for all requests
   static const Duration _timeout = Duration(seconds: 10);
 
   Future<Map<String, dynamic>> fetchCurrentWeather(
-      {double? lat, double? lon}) async {
-    final latitude = lat ?? this.lat;
-    final longitude = lon ?? this.lon;
-
+      {required double lat, required double lon}) async {
     if (apiKey.isEmpty) {
       throw Exception('API Key not configured. Build with --dart-define-from-file=secrets.json');
     }
 
     final url = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric&lang=id');
+        'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=id');
     final response = await http.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {
@@ -31,16 +25,13 @@ class WeatherService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchForecast({double? lat, double? lon}) async {
-    final latitude = lat ?? this.lat;
-    final longitude = lon ?? this.lon;
-
+  Future<Map<String, dynamic>> fetchForecast({required double lat, required double lon}) async {
     if (apiKey.isEmpty) {
       throw Exception('API Key not configured. Build with --dart-define-from-file=secrets.json');
     }
 
     final url = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/forecast?lat=$latitude&lon=$longitude&appid=$apiKey&units=metric&lang=id');
+        'https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=id');
     final response = await http.get(url).timeout(_timeout);
 
     if (response.statusCode == 200) {

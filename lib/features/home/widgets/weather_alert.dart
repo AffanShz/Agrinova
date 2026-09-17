@@ -8,27 +8,42 @@ class WeatherAlert extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Define severity based on message content
+    final isCritical = message.toLowerCase().contains('badai petir') ||
+        message.toLowerCase().contains('tornado') ||
+        message.toLowerCase().contains('abu vulkanik') ||
+        message.toLowerCase().contains('sangat tinggi') ||
+        message.toLowerCase().contains('sangat rendah');
+
+    final bgColor = isCritical ? AppColors.lightRed : Colors.orange.shade50;
+    final borderColor = isCritical ? AppColors.red : Colors.orange;
+    final iconColor = isCritical ? AppColors.red : Colors.orange.shade800;
+    final textColor = isCritical ? Colors.red.shade900 : Colors.orange.shade900;
+    final title = isCritical ? 'PERINGATAN BAHAYA!' : 'PERHATIAN CUACA';
+    final icon = isCritical ? Icons.warning_amber_rounded : Icons.info_outline_rounded;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.lightRed,
+        color: bgColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.red,
+          color: borderColor.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: AppColors.red,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.notifications_active_outlined,
-              color: AppColors.white,
+            child: Icon(
+              icon,
+              color: iconColor,
               size: 24,
             ),
           ),
@@ -38,19 +53,21 @@ class WeatherAlert extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'PERINGATAN CUACA!',
+                  title,
                   style: TextStyle(
-                    color: Colors.red[900],
+                    color: textColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   message,
                   style: TextStyle(
-                    color: Colors.red[900],
-                    fontSize: 12,
+                    color: textColor.withValues(alpha: 0.9),
+                    fontSize: 13,
+                    height: 1.4,
                   ),
                 ),
               ],

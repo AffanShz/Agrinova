@@ -20,14 +20,24 @@ class LocationService {
         final data = json.decode(response.body);
         final address = data['address'] ?? {};
 
+        final district = address['district'] ?? address['city_district'] ?? '';
+        final regency = address['county'] ?? address['city'] ?? '';
+        final province = address['state'] ?? '';
+
+        final shortParts = <String>[];
+        if (district.isNotEmpty) shortParts.add(district);
+        if (regency.isNotEmpty) shortParts.add(regency);
+        if (province.isNotEmpty) shortParts.add(province);
+
         return {
           'village': address['village'] ??
               address['suburb'] ??
               address['neighbourhood'] ??
               '',
-          'district': address['district'] ?? address['city_district'] ?? '',
-          'regency': address['county'] ?? address['city'] ?? '',
-          'province': address['state'] ?? '',
+          'district': district,
+          'regency': regency,
+          'province': province,
+          'short': shortParts.join(', '),
           'full': _buildFullAddress(address),
         };
       }
@@ -40,6 +50,7 @@ class LocationService {
       'district': '',
       'regency': '',
       'province': '',
+      'short': '',
       'full': '',
     };
   }

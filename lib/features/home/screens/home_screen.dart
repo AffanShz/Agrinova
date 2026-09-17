@@ -7,7 +7,7 @@ import 'package:agrinova/features/home/widgets/quick_access.dart';
 import 'package:agrinova/features/home/widgets/tips_list.dart';
 import 'package:agrinova/features/home/widgets/weather_alert.dart';
 import 'package:agrinova/widgets/custom_app_bar.dart';
-import 'package:agrinova/widgets/main_weather_card.dart';
+import 'package:agrinova/features/home/widgets/home_weather_card.dart';
 import 'package:agrinova/widgets/section_header.dart';
 import 'package:agrinova/features/weather/screens/weather_detail_screen.dart';
 import 'package:agrinova/core/services/notification_service.dart';
@@ -188,9 +188,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 },
-                child: MainWeatherCard(
-                  weatherData: state.currentWeather,
-                  detailedLocation: state.detailedLocation,
+                child: HomeWeatherCard(
+                  currentWeather: state.currentWeather,
+                  shortLocation: state.shortLocation,
+                  isRealTimeGps: state.isRealTimeGps,
                   onRefresh: () {
                     context.read<HomeBloc>().add(RefreshHomeData());
                   },

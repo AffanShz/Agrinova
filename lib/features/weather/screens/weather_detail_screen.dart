@@ -118,7 +118,8 @@ class _WeatherDetailScreenState extends State<WeatherDetailScreen> {
 
       String? locationStr;
       if (lat != null && lon != null) {
-        locationStr = await _weatherRepository.fetchDetailedLocation(lat, lon);
+        final locResult = await _weatherRepository.fetchDetailedLocation(lat, lon);
+        locationStr = locResult['full'];
       }
 
       if (mounted) {

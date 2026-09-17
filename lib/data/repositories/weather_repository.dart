@@ -97,6 +97,10 @@ class WeatherRepository {
     // Cek offline mode
     final offlineMode = _cacheService.getOfflineMode();
 
+    // Resolve coordinates: provided -> cache -> fallback (Jakarta)
+    double resolvedLat = lat ?? _cacheService.getCachedCoordinates()?['latitude'] ?? -6.2088;
+    double resolvedLon = lon ?? _cacheService.getCachedCoordinates()?['longitude'] ?? 106.8456;
+
     // Load dari cache dulu
     final cachedWeather = _cacheService.getCachedCurrentWeather();
     if (cachedWeather != null) {
@@ -110,7 +114,7 @@ class WeatherRepository {
     // Fetch dari API
     try {
       final weather =
-          await _weatherService.fetchCurrentWeather(lat: lat, lon: lon);
+          await _weatherService.fetchCurrentWeather(lat: resolvedLat, lon: resolvedLon);
       return weather;
     } catch (e) {
       debugPrint('WeatherRepository: API error - $e');
@@ -135,6 +139,10 @@ class WeatherRepository {
     // Cek offline mode
     final offlineMode = _cacheService.getOfflineMode();
 
+    // Resolve coordinates
+    double resolvedLat = lat ?? _cacheService.getCachedCoordinates()?['latitude'] ?? -6.2088;
+    double resolvedLon = lon ?? _cacheService.getCachedCoordinates()?['longitude'] ?? 106.8456;
+
     // Load dari cache dulu
     final cachedForecast = _cacheService.getCachedForecast();
     if (cachedForecast != null) {
@@ -147,7 +155,7 @@ class WeatherRepository {
 
     // Fetch dari API
     try {
-      final forecast = await _weatherService.fetchForecast(lat: lat, lon: lon);
+      final forecast = await _weatherService.fetchForecast(lat: resolvedLat, lon: resolvedLon);
       return forecast['list'] ?? [];
     } catch (e) {
       debugPrint('WeatherRepository: API error - $e');
@@ -164,21 +172,35 @@ class WeatherRepository {
   }
 
   /// Fetch lokasi detail
-  Future<String?> fetchDetailedLocation(double lat, double lon) async {
+  Future<Map<String, String?>> fetchDetailedLocation(double lat, double lon) async {
     try {
       final locationData = await _locationService.getDetailedLocation(lat, lon);
       final locationStr = locationData['full'];
+      final shortStr = locationData['short'];
 
       // Save ke cache
       if (locationStr != null && locationStr.isNotEmpty) {
-        await _cacheService.saveLocationData(locationStr, lat, lon);
+        await _cacheService.saveLocationData(
+          locationStr,
+          shortStr ?? locationStr,
+          lat,
+          lon,
+        );
       }
 
-      return locationStr;
+      return {
+        'full': locationStr,
+        'short': shortStr?.isNotEmpty == true ? shortStr : locationStr,
+      };
     } catch (e) {
       debugPrint('WeatherRepository: Location error - $e');
       // Fallback ke cached location atau dummy
-      return _cacheService.getCachedDetailedLocation() ?? 'Jakarta, Indonesia';
+      final cachedFull = _cacheService.getCachedDetailedLocation() ?? 'Jakarta, Indonesia';
+      final cachedShort = _cacheService.getCachedShortLocation() ?? cachedFull;
+      return {
+        'full': cachedFull,
+        'short': cachedShort,
+      };
     }
   }
 
@@ -196,6 +218,11 @@ class WeatherRepository {
   /// Get cached location
   String? getCachedLocation() {
     return _cacheService.getCachedDetailedLocation();
+  }
+
+  /// Get cached short location
+  String? getCachedShortLocation() {
+    return _cacheService.getCachedShortLocation() ?? _cacheService.getCachedDetailedLocation();
   }
 
   /// Get cache time

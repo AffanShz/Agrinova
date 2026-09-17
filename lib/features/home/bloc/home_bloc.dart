@@ -88,6 +88,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final cachedWeather = _cacheService.getCachedCurrentWeather();
       final cachedForecast = _cacheService.getCachedForecast();
       final cachedLocation = _weatherRepository.getCachedLocation();
+      final cachedShortLocation = _weatherRepository.getCachedShortLocation();
       final cacheTime = _weatherRepository.getCacheTime();
 
       if (cachedWeather != null) {
@@ -97,6 +98,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           currentWeather: cachedWeather,
           forecastList: cachedForecast ?? [],
           detailedLocation: cachedLocation,
+          shortLocation: cachedShortLocation,
           lastSyncTime: cacheTime,
           isOnline: false,
           alertMessage: alertMessage,
@@ -202,8 +204,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       // Fetch location via Repository
       String? locationStr;
+      String? shortLocationStr;
       if (lat != null && lon != null) {
-        locationStr = await _weatherRepository.fetchDetailedLocation(lat, lon);
+        final locationMap = await _weatherRepository.fetchDetailedLocation(lat, lon);
+        locationStr = locationMap['full'];
+        shortLocationStr = locationMap['short'];
       }
 
       // Save to cache via Repository — hanya jika data benar-benar dari API,
@@ -224,9 +229,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         currentWeather: current,
         forecastList: forecastList,
         detailedLocation: locationStr ?? _weatherRepository.getCachedLocation(),
+        shortLocation: shortLocationStr ?? _weatherRepository.getCachedShortLocation(),
         lastSyncTime: DateTime.now(),
         isOnline: true,
         alertMessage: alertMessage,
+        isRealTimeGps: lat != null && lon != null,
       ));
     } catch (e) {
       debugPrint("Fetch data error: $e");
@@ -254,11 +261,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final List<dynamic> weatherList = current['weather'];
     if (weatherList.isEmpty) return null;
 
-    // Data cache/dummy mungkin tidak punya field 'id', jadi tangani null
     final conditionId = weatherList[0]['id'];
     if (conditionId is! int) return null;
 
-    // Menggunakan WeatherUtils untuk rekomendasi
+    final temp = (current['main']?['temp'] as num?)?.round();
+    if (temp != null) {
+      WeatherUtils.updateTemperature(temp);
+    }
+
     return WeatherUtils.getRecommendation(conditionId);
   }
 }
