@@ -36,6 +36,7 @@ class MidtransService {
     required String planName,
     required int amount,
     String paymentMethod = 'qris',
+    String? productId,
   }) async {
     try {
       final session = _supabase.auth.currentSession;
@@ -49,6 +50,7 @@ class MidtransService {
           'planName': planName,
           'amount': amount,
           'paymentMethod': paymentMethod,
+          if (productId != null) 'productId': productId,
         },
       );
 
