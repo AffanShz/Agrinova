@@ -42,7 +42,7 @@ import 'package:agrinova/logic/app_lifecycle/app_lifecycle_observer.dart';
 // UI
 import 'package:agrinova/features/onboarding/screens/onboarding_screen.dart';
 import 'package:agrinova/features/auth/screens/login_screen.dart';
-import 'package:agrinova/widgets/navbaar.dart';
+import 'package:agrinova/widgets/main_screen.dart';
 import 'package:agrinova/widgets/app_toast.dart';
 
 bool appStartedOffline = false;
