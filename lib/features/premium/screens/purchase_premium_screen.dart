@@ -812,12 +812,35 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
     );
   }
 
+  int _getPlanRank(String? planName) {
+    if (planName == null) return 0;
+    final lower = planName.toLowerCase();
+    if (lower.contains('ultimate') || lower.contains('bisnis')) return 3;
+    if (lower.contains('pro')) return 2;
+    if (lower.contains('basic')) return 1;
+    return 0;
+  }
+
   Widget _buildPricingPlansList() {
+    final currentActivePlanName = _subscriptionDetails['isActive'] == true
+        ? (_subscriptionDetails['planName'] as String? ?? '')
+        : '';
+    final currentRank = _getPlanRank(currentActivePlanName);
+
     return Column(
       children: List.generate(_plans.length, (index) {
         final plan = _plans[index];
+        final planTitle = plan['title'] as String;
+        final planRank = _getPlanRank(planTitle);
         final isSelected = _selectedPlanIndex == index;
         final isPopular = plan['isPopular'] == true;
+        final isCurrentPlan = _subscriptionDetails['isActive'] == true &&
+            currentActivePlanName.toLowerCase() == planTitle.toLowerCase();
+        final isUpgrade = _subscriptionDetails['isActive'] == true &&
+            planRank > currentRank;
+        final isDowngrade = _subscriptionDetails['isActive'] == true &&
+            !isCurrentPlan &&
+            planRank < currentRank;
 
         return GestureDetector(
           onTap: () => setState(() => _selectedPlanIndex = index),
@@ -826,11 +849,19 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
             curve: Curves.easeOut,
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFF1F8E9) : Colors.white,
+              color: isCurrentPlan
+                  ? const Color(0xFFE8F5E9)
+                  : isSelected
+                      ? const Color(0xFFF1F8E9)
+                      : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? AppColors.primaryGreen : Colors.grey[300]!,
-                width: isSelected ? 2 : 1,
+                color: isCurrentPlan
+                    ? const Color(0xFF2E7D32)
+                    : isSelected
+                        ? AppColors.primaryGreen
+                        : Colors.grey[300]!,
+                width: (isCurrentPlan || isSelected) ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
@@ -848,7 +879,7 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   child: Row(
                     children: [
-                      // Radio check circle
+                      // Radio check / active badge circle
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         curve: Curves.easeOut,
@@ -856,17 +887,21 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                         height: 22,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isSelected
-                              ? AppColors.primaryGreen
-                              : Colors.transparent,
+                          color: isCurrentPlan
+                              ? const Color(0xFF2E7D32)
+                              : isSelected
+                                  ? AppColors.primaryGreen
+                                  : Colors.transparent,
                           border: Border.all(
-                            color: isSelected
-                                ? AppColors.primaryGreen
-                                : Colors.grey[400]!,
+                            color: isCurrentPlan
+                                ? const Color(0xFF2E7D32)
+                                : isSelected
+                                    ? AppColors.primaryGreen
+                                    : Colors.grey[400]!,
                             width: 2,
                           ),
                         ),
-                        child: isSelected
+                        child: (isCurrentPlan || isSelected)
                             ? const Icon(Icons.check,
                                 size: 14, color: Colors.white)
                             : null,
@@ -887,12 +922,82 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
-                                    color: isSelected
-                                        ? AppColors.primaryGreen
-                                        : Colors.black87,
+                                    color: isCurrentPlan
+                                        ? const Color(0xFF1B5E20)
+                                        : isSelected
+                                            ? AppColors.primaryGreen
+                                            : Colors.black87,
                                   ),
                                 ),
-                                if (plan['saveTag'] != null) ...[
+                                if (isCurrentPlan) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF2E7D32),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.verified_rounded,
+                                            size: 11, color: Colors.white),
+                                        SizedBox(width: 3),
+                                        Text(
+                                          'SEDANG DIGUNAKAN',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ] else if (isUpgrade) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1565C0),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.upgrade_rounded,
+                                            size: 11, color: Colors.white),
+                                        SizedBox(width: 2),
+                                        Text(
+                                          'TINGKATKAN LAYANAN',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ] else if (isDowngrade) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade600,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'UBAH KE PAKET INI',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (plan['saveTag'] != null) ...[
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 6, vertical: 2),
@@ -914,9 +1019,18 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              plan['subtitle'],
+                              isCurrentPlan
+                                  ? 'Paket aktif saat ini'
+                                  : plan['subtitle'],
                               style: TextStyle(
-                                  fontSize: 12, color: Colors.grey[600]),
+                                fontSize: 12,
+                                color: isCurrentPlan
+                                    ? const Color(0xFF2E7D32)
+                                    : Colors.grey[600],
+                                fontWeight: isCurrentPlan
+                                    ? FontWeight.w500
+                                    : FontWeight.normal,
+                              ),
                             ),
                           ],
                         ),
@@ -932,18 +1046,22 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected
-                                    ? AppColors.primaryGreen
-                                    : Colors.black87,
+                                color: isCurrentPlan
+                                    ? const Color(0xFF1B5E20)
+                                    : isSelected
+                                        ? AppColors.primaryGreen
+                                        : Colors.black87,
                               ),
                             ),
                             Text(
                               plan['rawPrice'],
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isSelected
-                                    ? AppColors.darkGreen
-                                    : Colors.grey[500],
+                                color: isCurrentPlan
+                                    ? const Color(0xFF2E7D32)
+                                    : isSelected
+                                        ? AppColors.darkGreen
+                                        : Colors.grey[500],
                               ),
                             ),
                           ],
@@ -952,7 +1070,7 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                     ],
                   ),
                 ),
-                if (isPopular)
+                if (isPopular && !isCurrentPlan && !isUpgrade)
                   Positioned(
                     top: -10,
                     right: 18,
