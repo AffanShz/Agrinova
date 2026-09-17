@@ -197,7 +197,7 @@ lib/
 1. **Clone Repository**
 
    ```bash
-   git clone https://github.com/AffanShz/CapstonePetaniMaju.git
+   git clone https://github.com/AffanShz/AgriNova.git
    cd agrinova
    ```
 
