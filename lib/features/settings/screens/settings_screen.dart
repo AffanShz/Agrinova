@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,7 +14,9 @@ import 'package:agrinova/features/premium/screens/purchase_premium_screen.dart';
 import 'package:agrinova/widgets/app_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:intl/intl.dart' as intl_pkg;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
+import 'package:agrinova/core/services/app_logger.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -242,6 +243,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildDivider(),
                 _buildSettingsTile(
                   icon: null,
+                  title: 'Kebijakan Privasi & Ketentuan',
+                  onTap: () async {
+                    final uri = Uri.parse('https://sites.google.com/view/agrinova-privacy/home');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
+                _buildDivider(),
+                _buildSettingsTile(
+                  icon: null,
                   title: 'settings.about'.tr(),
                   subtitle: 'v1.0.0',
                   onTap: () {
@@ -269,7 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       await Supabase.instance.client.auth.signOut();
                       await CacheService().clearAllCache();
                     } catch (e) {
-                      if (kDebugMode) print('Sign out error: $e');
+                      AppLogger().debug('Agrinova', 'Sign out error: $e');
                     }
                     if (context.mounted) {
                       context.read<AppBloc>().add(AppLoggedOut());
@@ -299,7 +311,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundImage: imageProvider,
           onBackgroundImageError: imageProvider != null
               ? (exception, stackTrace) {
-                  if (kDebugMode) print("Settings Profile Image Error: $exception");
+                  AppLogger().debug('Agrinova', "Settings Profile Image Error: $exception");
                 }
               : null,
           child: imageProvider == null
