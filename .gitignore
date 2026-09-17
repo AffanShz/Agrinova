@@ -66,5 +66,9 @@ key.properties
 *.pem
 *.p12
 secrets/
-.katalog_obat_tanaman.json
 .claude/
+pdf/
+.agents/
+agent/
+supabase/
+skills-lock.json
