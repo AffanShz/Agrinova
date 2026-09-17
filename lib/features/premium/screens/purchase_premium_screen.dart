@@ -120,30 +120,49 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
 
   Future<void> _processPayment() async {
     final selectedPlan = _plans[_selectedPlanIndex];
-    final String directPaymentUrl = selectedPlan['paymentLink'] as String;
-    final String orderId = 'PM-${selectedPlan['productId']}-${DateTime.now().millisecondsSinceEpoch}';
+    final planTitle = selectedPlan['title'] as String;
+    final int amount = selectedPlan['amount'] as int? ?? 29000;
 
     setState(() => _isProcessing = true);
 
     try {
-      // Buka langsung Midtrans Payment Link resmi yang sudah dikonfigurasi channel pembayarannya
-      await _midtransService.openPaymentUrl(directPaymentUrl);
+      String? paymentUrl = selectedPlan['paymentLink'] as String?;
+      String orderId = 'PM-${selectedPlan['productId']}-${DateTime.now().millisecondsSinceEpoch}';
+
+      try {
+        // Panggil edge function untuk mencatat transaksi dan mendapatkan URL Snap dinamis (Aman)
+        final result = await _midtransService.createTransaction(
+          planName: planTitle,
+          amount: amount,
+          productId: selectedPlan['productId'] as String?,
+        );
+        paymentUrl = result.redirectUrl;
+        orderId = result.orderId;
+      } catch (e) {
+        debugPrint('createTransaction error, fallback to direct paymentLink: $e');
+        if (paymentUrl == null) rethrow;
+      }
 
       if (!mounted) return;
       setState(() => _isProcessing = false);
 
+      // Buka halaman pembayaran di browser eksternal
+      await _midtransService.openPaymentUrl(paymentUrl);
+
       // Tampilkan sheet verifikasi status pembayaran
-      _showPaymentVerificationSheet(
-        orderId: orderId,
-        plan: selectedPlan,
-        redirectUrl: directPaymentUrl,
-      );
+      if (mounted) {
+        _showPaymentVerificationSheet(
+          orderId: orderId,
+          plan: selectedPlan,
+          redirectUrl: paymentUrl,
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
         AppToast.show(
           context,
-          message: 'Terjadi kendala saat membuka halaman pembayaran: $e',
+          message: 'Terjadi kendala saat memproses tagihan: $e',
           type: ToastType.error,
         );
       }
@@ -348,11 +367,11 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Icon(Icons.check_circle_outline_rounded, size: 18),
+                          : const Icon(Icons.refresh_rounded, size: 18),
                       label: Text(
                         isChecking
-                            ? 'Memproses aktivasi...'
-                            : 'Saya Sudah Bayar',
+                            ? 'Mengecek ke server...'
+                            : 'Cek Status Pembayaran',
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14),
                       ),
@@ -361,27 +380,30 @@ class _PurchasePremiumScreenState extends State<PurchasePremiumScreen> {
                           : () async {
                               setSheetState(() => isChecking = true);
                               
-                              // Simulasi waktu proses verifikasi singkat
-                              await Future.delayed(const Duration(seconds: 2));
-                              
-                              // Karena menggunakan Payment Link eksternal statis (order_id Midtrans tidak
-                              // otomatis tersambung dengan Supabase), kita set status aktif secara lokal
-                              // agar UI segera terbuka bagi user yang menekan "Saya Sudah Bayar".
-                              final expiryDate = DateTime.now().add(plan['duration'] as Duration);
-                              await _cacheService.setSubscription(
-                                isActive: true,
-                                planName: plan['title'] as String,
-                                expiryDate: expiryDate,
-                              );
-                              
+                              // Sinkronkan status dari server Supabase (hasil webhook Midtrans)
+                              await _cacheService.syncSubscriptionFromServer();
                               setSheetState(() => isChecking = false);
 
-                              if (sheetContext.mounted) {
-                                Navigator.pop(sheetContext);
-                              }
-                              
-                              if (mounted) {
+                              final updatedDetails = _cacheService.getSubscriptionDetails();
+                              final isActive = updatedDetails['isActive'] == true;
+
+                              if (isActive) {
+                                if (sheetContext.mounted) {
+                                  Navigator.pop(sheetContext);
+                                }
+                                final expiryDate = updatedDetails['expiryDate'] as DateTime? ??
+                                    DateTime.now().add(const Duration(days: 30));
+                                if (!mounted) return;
                                 _showSuccessDialog(expiryDate);
+                              } else {
+                                if (outerContext.mounted) {
+                                  AppToast.show(
+                                    outerContext,
+                                    message:
+                                        'Pembayaran sedang diverifikasi server. Harap selesaikan tagihan lalu cek kembali.',
+                                    type: ToastType.warning,
+                                  );
+                                }
                               }
                             },
                     ),
