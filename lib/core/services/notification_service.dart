@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:agrinova/core/services/cache_service.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -24,7 +25,7 @@ class NotificationService {
       final String timeZoneName = _detectLocalTimeZone();
       tz.setLocalLocation(tz.getLocation(timeZoneName));
 
-      if (kDebugMode) print("Timezone set: $timeZoneName");
+      AppLogger().debug('Agrinova', "Timezone set: $timeZoneName");
 
       const AndroidInitializationSettings androidSettings =
           AndroidInitializationSettings('@mipmap/launcher_icon');
@@ -44,13 +45,13 @@ class NotificationService {
       await _notificationsPlugin.initialize(
         initSettings,
         onDidReceiveNotificationResponse: (details) {
-          if (kDebugMode) print('Notification payload: ${details.payload}');
+          AppLogger().debug('Agrinova', 'Notification payload: ${details.payload}');
         },
       );
 
       _isInitialized = true;
     } catch (e) {
-      if (kDebugMode) print("Init failed: $e");
+      AppLogger().debug('Agrinova', "Init failed: $e");
     }
   }
 
@@ -104,7 +105,7 @@ class NotificationService {
         await platform.requestExactAlarmsPermission();
       }
     } catch (e) {
-      if (kDebugMode) print("Permission request failed: $e");
+      AppLogger().debug('Agrinova', "Permission request failed: $e");
     }
   }
 
@@ -117,7 +118,7 @@ class NotificationService {
     try {
       const AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
-        'channel_petani_alert_v2',
+        'channel_agrinova_alert_v2',
         'Peringatan Cuaca',
         channelDescription: 'Notifikasi darurat untuk petani',
         importance: Importance.max,
@@ -150,7 +151,7 @@ class NotificationService {
         'isRead': false,
       });
     } catch (e) {
-      if (kDebugMode) print("Show notification failed: $e");
+      AppLogger().debug('Agrinova', "Show notification failed: $e");
     }
   }
 
@@ -170,10 +171,10 @@ class NotificationService {
       }
 
       if (kDebugMode) {
-        print('🔔 scheduleNotification called:');
-        print('   ID: $id');
-        print('   Title: $title');
-        print('   Scheduled: $scheduledDate');
+        AppLogger().debug('Agrinova', '🔔 scheduleNotification called:');
+        AppLogger().debug('Agrinova', '   ID: $id');
+        AppLogger().debug('Agrinova', '   Title: $title');
+        AppLogger().debug('Agrinova', '   Scheduled: $scheduledDate');
       }
 
       final tz.TZDateTime tzScheduledDate =
@@ -182,8 +183,8 @@ class NotificationService {
       final now = tz.TZDateTime.now(tz.local);
 
       if (kDebugMode) {
-        print('   TZ Scheduled: $tzScheduledDate');
-        print('   TZ Now: $now');
+        AppLogger().debug('Agrinova', '   TZ Scheduled: $tzScheduledDate');
+        AppLogger().debug('Agrinova', '   TZ Now: $now');
       }
 
       if (finalScheduledDate.isBefore(now)) {
@@ -191,11 +192,11 @@ class NotificationService {
           // Jika kurang dari 5 menit yang lalu, tampilkan sekarang
           finalScheduledDate = now.add(const Duration(seconds: 5));
           if (kDebugMode) {
-            print('   ⚡ Adjusted to: $finalScheduledDate (was in past <5min)');
+            AppLogger().debug('Agrinova', '   ⚡ Adjusted to: $finalScheduledDate (was in past <5min)');
           }
         } else {
           if (kDebugMode) {
-            print(
+            AppLogger().debug('Agrinova', 
                 '   ❌ SKIPPED: Time already passed by ${now.difference(finalScheduledDate).inMinutes} minutes');
           }
           return;
@@ -203,7 +204,7 @@ class NotificationService {
       }
 
       if (kDebugMode) {
-        print('   📅 Final scheduled time: $finalScheduledDate');
+        AppLogger().debug('Agrinova', '   📅 Final scheduled time: $finalScheduledDate');
       }
 
       await _notificationsPlugin.zonedSchedule(
@@ -244,14 +245,14 @@ class NotificationService {
         'isRead': false,
       });
     } catch (e) {
-      if (kDebugMode) print("❌ Schedule failed for ID $id: $e");
+      AppLogger().debug('Agrinova', "❌ Schedule failed for ID $id: $e");
     }
   }
 
   Future<void> cancelNotification(int id) async {
     await _notificationsPlugin.cancel(id);
     await CacheService().removeNotification(id);
-    if (kDebugMode) print('🗑️ Notification $id cancelled');
+    AppLogger().debug('Agrinova', '🗑️ Notification $id cancelled');
   }
 
   /// Get list of all pending (scheduled) notifications
@@ -263,9 +264,9 @@ class NotificationService {
   Future<void> printPendingNotifications() async {
     final pending = await getPendingNotifications();
     if (kDebugMode) {
-      print('📋 Pending Notifications: ${pending.length}');
+      AppLogger().debug('Agrinova', '📋 Pending Notifications: ${pending.length}');
       for (var n in pending) {
-        print('   ID: ${n.id}, Title: ${n.title}');
+        AppLogger().debug('Agrinova', '   ID: ${n.id}, Title: ${n.title}');
       }
     }
   }

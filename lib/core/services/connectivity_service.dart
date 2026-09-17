@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:agrinova/core/services/cache_service.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 class ConnectivityService {
   static final ConnectivityService _instance = ConnectivityService._internal();
@@ -46,7 +47,7 @@ class ConnectivityService {
     bool isOffline = !isConnected;
 
     if (kDebugMode) {
-      print('Connectivity changed: $results -> Offline: $isOffline');
+      AppLogger().debug('Agrinova', 'Connectivity changed: $results -> Offline: $isOffline');
     }
 
     // Catat status koneksi sistem (terpisah dari preferensi offline user)

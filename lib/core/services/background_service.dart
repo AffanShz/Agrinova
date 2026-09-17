@@ -4,8 +4,8 @@ import 'package:agrinova/core/services/cache_service.dart';
 import 'package:agrinova/core/services/notification_service.dart';
 import 'package:agrinova/data/datasources/weather_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 // Task names
 const String weatherCheckTask = "checkWeatherCondition";
@@ -15,7 +15,7 @@ void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     WidgetsFlutterBinding.ensureInitialized();
     
-    if (kDebugMode) print("🔄 Background Task Started: $task");
+    AppLogger().debug('Agrinova', "🔄 Background Task Started: $task");
 
     if (task == weatherCheckTask) {
       try {
@@ -44,7 +44,7 @@ void callbackDispatcher() {
         // Ensure morning briefing is scheduled for next day with latest data
         await scheduler.scheduleMorningBriefing();
       } catch (e) {
-        if (kDebugMode) print("❌ Background Task Failed: $e");
+        AppLogger().debug('Agrinova', "❌ Background Task Failed: $e");
         return Future.value(false);
       }
     }
@@ -75,6 +75,6 @@ class BackgroundService {
       existingWorkPolicy: ExistingWorkPolicy.keep,
     );
 
-    if (kDebugMode) print("✅ Background Service Initialized");
+    AppLogger().debug('Agrinova', "✅ Background Service Initialized");
   }
 }

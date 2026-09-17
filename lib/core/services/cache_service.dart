@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:agrinova/data/models/notification_settings.dart';
 
 import 'package:agrinova/data/models/chat_session.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 /// Service for caching API data locally using Hive
 /// Supports offline-first approach: load cache first, then fetch API
@@ -14,6 +15,9 @@ class CacheService {
   static final CacheService _instance = CacheService._internal();
   factory CacheService() => _instance;
   CacheService._internal();
+
+  @visibleForTesting
+  CacheService.forTesting();
 
   // Profile update stream
   final _profileUpdateController =
@@ -30,6 +34,8 @@ class CacheService {
   // Box names
   static const String _weatherBoxName = 'weatherCache';
   static const String _tipsBoxName = 'tipsCache';
+  static const String _pestsBoxName = 'pestsCache';
+  static const String _drugsBoxName = 'drugsCache';
   static const String _locationBoxName = 'locationCache';
   static const String _settingsBoxName = 'settingsCache';
   static const String _notificationHistoryBoxName = 'notificationHistory';
@@ -45,6 +51,10 @@ class CacheService {
     await Hive.openBox(_weatherBoxName,
         encryptionCipher: HiveAesCipher(encryptionKey));
     await Hive.openBox(_tipsBoxName,
+        encryptionCipher: HiveAesCipher(encryptionKey));
+    await Hive.openBox(_pestsBoxName,
+        encryptionCipher: HiveAesCipher(encryptionKey));
+    await Hive.openBox(_drugsBoxName,
         encryptionCipher: HiveAesCipher(encryptionKey));
     await Hive.openBox(_locationBoxName,
         encryptionCipher: HiveAesCipher(encryptionKey));
@@ -167,8 +177,9 @@ class CacheService {
 
   /// Save detailed location to cache
   Future<void> saveLocationData(
-      String detailedLocation, double lat, double lon) async {
+      String detailedLocation, String shortLocation, double lat, double lon) async {
     await _locationBox.put('detailedLocation', detailedLocation);
+    await _locationBox.put('shortLocation', shortLocation);
     await _locationBox.put('latitude', lat);
     await _locationBox.put('longitude', lon);
     await _locationBox.put('lastUpdated', DateTime.now().toIso8601String());
@@ -177,6 +188,11 @@ class CacheService {
   /// Get cached detailed location
   String? getCachedDetailedLocation() {
     return _locationBox.get('detailedLocation');
+  }
+  
+  /// Get cached short location
+  String? getCachedShortLocation() {
+    return _locationBox.get('shortLocation');
   }
 
   /// Get cached coordinates
@@ -191,28 +207,32 @@ class CacheService {
 
   // ==================== PESTS CACHE ====================
 
-  /// Save pests list to cache (uses tipsBox for simplicity)
+  Box get _pestsBox => Hive.box(_pestsBoxName);
+
+  /// Save pests list to cache
   Future<void> savePestsData(List<Map<String, dynamic>> pests) async {
-    await _tipsBox.put('pests', pests);
-    await _tipsBox.put('pestsLastUpdated', DateTime.now().toIso8601String());
+    await _pestsBox.put('pests', pests);
+    await _pestsBox.put('pestsLastUpdated', DateTime.now().toIso8601String());
   }
 
   /// Get cached pests list
   List<Map<String, dynamic>>? getCachedPests() {
-    return _safeListOfMap(_tipsBox.get('pests'));
+    return _safeListOfMap(_pestsBox.get('pests')) ?? _safeListOfMap(_tipsBox.get('pests'));
   }
 
   // ==================== DRUGS CACHE ====================
 
+  Box get _drugsBox => Hive.box(_drugsBoxName);
+
   /// Save drugs list to cache
   Future<void> saveDrugsData(List<Map<String, dynamic>> drugs) async {
-    await _tipsBox.put('drugs', drugs);
-    await _tipsBox.put('drugsLastUpdated', DateTime.now().toIso8601String());
+    await _drugsBox.put('drugs', drugs);
+    await _drugsBox.put('drugsLastUpdated', DateTime.now().toIso8601String());
   }
 
   /// Get cached drugs list
   List<Map<String, dynamic>>? getCachedDrugs() {
-    return _safeListOfMap(_tipsBox.get('drugs'));
+    return _safeListOfMap(_drugsBox.get('drugs')) ?? _safeListOfMap(_tipsBox.get('drugs'));
   }
 
   /// Safe-convert nilai Hive ke List<Map<String, dynamic>>.
@@ -238,6 +258,8 @@ class CacheService {
   Future<void> clearAllCache() async {
     await _weatherBox.clear();
     await _tipsBox.clear();
+    await _pestsBox.clear();
+    await _drugsBox.clear();
     await _locationBox.clear();
     await Hive.box(_plantingScheduleBoxName).clear();
     await _notificationHistoryBox.clear();
@@ -370,7 +392,7 @@ class CacheService {
   /// Get user profile
   Map<String, String?> getUserProfile() {
     try {
-      if (kDebugMode) print("CacheService: Getting user profile...");
+      AppLogger().debug('Agrinova', "CacheService: Getting user profile...");
       final name = _settingsBox.get('userName', defaultValue: 'Pak Tani');
       final image = _settingsBox.get('userImage');
 
@@ -378,10 +400,10 @@ class CacheService {
         'name': name?.toString() ?? 'Pak Tani',
         'imagePath': image?.toString()
       };
-      if (kDebugMode) print("CacheService: Profile found: $result");
+      AppLogger().debug('Agrinova', "CacheService: Profile found: $result");
       return result;
     } catch (e) {
-      if (kDebugMode) print('CacheService: Error getting user profile: $e');
+      AppLogger().debug('Agrinova', 'CacheService: Error getting user profile: $e');
       return {'name': 'Pak Tani', 'imagePath': null};
     }
   }

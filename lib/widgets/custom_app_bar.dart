@@ -7,6 +7,7 @@ import 'package:agrinova/core/constants/colors.dart';
 import 'package:agrinova/core/services/cache_service.dart';
 import 'package:agrinova/features/notifications/screens/notification_history_screen.dart';
 import 'package:agrinova/features/premium/screens/purchase_premium_screen.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 class CustomAppBar extends StatefulWidget {
   final DateTime? lastSyncTime;
@@ -124,7 +125,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                       onBackgroundImageError: imageProvider != null
                           ? (exception, stackTrace) {
                               if (kDebugMode) {
-                                print("AppBar Profile Image Error: $exception");
+                                AppLogger().debug('Agrinova', "AppBar Profile Image Error: $exception");
                               }
                             }
                           : null,

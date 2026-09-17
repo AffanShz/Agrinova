@@ -5,6 +5,7 @@ import 'package:agrinova/core/services/notification_service.dart';
 import 'package:agrinova/core/services/cache_service.dart';
 import 'package:agrinova/data/models/notification_settings.dart';
 import 'package:agrinova/utils/weather_utils.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 /// Service untuk mengatur semua jadwal dan logic notifikasi cerdas
 class NotificationScheduler {
@@ -99,7 +100,7 @@ class NotificationScheduler {
     );
 
     if (kDebugMode) {
-      print('Morning briefing scheduled for: $scheduledDate');
+      AppLogger().debug('Agrinova', 'Morning briefing scheduled for: $scheduledDate');
     }
   }
 

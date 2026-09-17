@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:agrinova/core/constants/colors.dart';
 import 'package:agrinova/core/services/cache_service.dart';
+import 'package:agrinova/core/services/app_logger.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,21 +24,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    if (kDebugMode) print("ProfileScreen: initState called");
+    AppLogger().debug('Agrinova', "ProfileScreen: initState called");
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
     try {
-      if (kDebugMode) print("ProfileScreen: Loading profile data...");
+      AppLogger().debug('Agrinova', "ProfileScreen: Loading profile data...");
       final profile = _cacheService.getUserProfile();
       setState(() {
         _nameController.text = profile['name'] ?? '';
         _imagePath = profile['imagePath'];
       });
-      if (kDebugMode) print("ProfileScreen: Data loaded: name=${_nameController.text}, path=$_imagePath");
+      AppLogger().debug('Agrinova', "ProfileScreen: Data loaded: name=${_nameController.text}, path=$_imagePath");
     } catch (e) {
-      if (kDebugMode) print("ProfileScreen Error loading: $e");
+      AppLogger().debug('Agrinova', "ProfileScreen Error loading: $e");
     }
   }
 
@@ -110,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (kDebugMode) print("ProfileScreen: build called");
+    AppLogger().debug('Agrinova', "ProfileScreen: build called");
     
     // Determine image provider safely
     ImageProvider? imageProvider;
@@ -149,7 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Use onBackgroundImageError to handle missing files gracefully
                     onBackgroundImageError: imageProvider != null
                         ? (exception, stackTrace) {
-                            if (kDebugMode) print("Profile Image Error: $exception");
+                            AppLogger().debug('Agrinova', "Profile Image Error: $exception");
                           }
                         : null,
                     child: imageProvider == null
