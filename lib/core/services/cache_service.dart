@@ -570,31 +570,24 @@ class CacheService {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // Panggil RPC server-side yang juga otomatis mengecek & membatalkan
+      // jika waktu sudah lewat masa 30 hari
       final response = await Supabase.instance.client
-          .from('subscriptions')
-          .select()
-          .eq('user_id', user.id)
-          .order('created_at', ascending: false)
-          .limit(1);
+          .rpc('get_or_sync_user_subscription');
 
-      if (response.isNotEmpty) {
-        final sub = Map<String, dynamic>.from(response.first as Map);
-        final status = sub['status'] as String?;
-        final expiresAt = DateTime.tryParse(
-            (sub['expires_at'] ?? '').toString());
-        final planName = sub['plan_name'] as String?;
+      if (response != null && response is Map) {
+        final isActive = response['is_active'] as bool? ?? false;
+        final planName = response['plan_name'] as String?;
+        final expiresAtStr = response['expires_at'] as String?;
+        final expiresAt = expiresAtStr != null ? DateTime.tryParse(expiresAtStr) : null;
 
-        final isActive = status == 'active' &&
-            expiresAt != null &&
-            expiresAt.isAfter(DateTime.now());
-
-        if (isActive) {
+        if (isActive && expiresAt != null && expiresAt.isAfter(DateTime.now())) {
           await setSubscription(
             isActive: true,
             planName: planName,
             expiryDate: expiresAt,
           );
-        } else if (status == 'cancelled' || status == 'expired') {
+        } else {
           await setSubscription(isActive: false);
         }
       }
